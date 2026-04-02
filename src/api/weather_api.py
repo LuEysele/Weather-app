@@ -1,3 +1,4 @@
+from datetime import datetime
 import requests
 from src.services.cache_service import get_cached_coords, set_cached_coords
 
@@ -102,11 +103,13 @@ def obtener_pronostico(ciudad):
             "latitude": lat,
             "longitude": lon,
 
+            "current": "temperature_2m",
+
             # predicción horaria
             "hourly": "temperature_2m,weathercode",
 
             # cuántos días (ajustable)
-            "forecast_days": 1,
+            "forecast_days": 2,
 
             # zona horaria
             "timezone": "auto"
@@ -126,15 +129,24 @@ def obtener_pronostico(ciudad):
         temperaturas = data["hourly"]["temperature_2m"]
         codigos = data["hourly"]["weathercode"]
 
+        ahora = datetime.now()
+
         items = []
 
+# buscar índice de la hora actual
         for i in range(len(tiempos)):
+            if tiempos[i] >= data["current"]["time"]:
+                start_index = i
+                break
+
+        # tomar próximas horas
+        for i in range(start_index, start_index + 8):
             items.append({
                 "time": tiempos[i],
                 "temp": temperaturas[i],
                 "code": codigos[i]
             })
-
+        items = items[:8]  # limitar a 8 horas
         return {
             "city": nombre,
             "items": items
